@@ -1,10 +1,6 @@
 import BottomNav from "../components/layout/BottomNav";
-
-const subjects = [
-  { name: "CN", percent: 80 },
-  { name: "DBMS", percent: 72 },
-  { name: "OS", percent: 60 },
-];
+import { useEffect, useState } from "react";
+import API from "../services/api";
 
 const getColor = (p) => {
   if (p >= 75) return "bg-green-500";
@@ -13,16 +9,40 @@ const getColor = (p) => {
 };
 
 const Attendance = () => {
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadAttendance = async () => {
+      try {
+        const res = await API.get("/api/erp/attendance");
+        setSubjects(res.data.attendance || []);
+      } catch (error) {
+        setSubjects([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAttendance();
+  }, []);
+
   return (
     <div className="p-4 pb-20">
       <h1 className="text-xl font-bold mb-1">✅ Attendance</h1>
       <p className="text-gray-400 text-sm mb-4">Your attendance summary</p>
 
+      {loading && <p className="text-gray-400 text-sm">Loading attendance...</p>}
+
+      {!loading && subjects.length === 0 && (
+        <p className="text-gray-400 text-sm">No attendance data yet. Sync from Profile page.</p>
+      )}
+
       <div className="space-y-4">
         {subjects.map((sub, i) => (
           <div key={i} className="bg-gray-800 p-4 rounded-xl">
             <div className="flex justify-between items-center mb-2">
-              <p className="font-medium">{sub.name}</p>
+              <p className="font-medium">{sub.subject}</p>
               <p className="text-sm font-semibold">{sub.percent}%</p>
             </div>
 

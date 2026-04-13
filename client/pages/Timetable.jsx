@@ -1,9 +1,32 @@
 import BottomNav from "../components/layout/BottomNav";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import API from "../services/api";
 
 const Timetable = () => {
   const [selectedDay, setSelectedDay] = useState("Mon");
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+  const [timetable, setTimetable] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadTimetable = async () => {
+      try {
+        const res = await API.get("/api/erp/timetable");
+        setTimetable(res.data.timetable || []);
+      } catch (error) {
+        setTimetable([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTimetable();
+  }, []);
+
+  const filteredClasses = useMemo(
+    () => timetable.filter((item) => item.day === selectedDay),
+    [selectedDay, timetable]
+  );
 
   return (
     <div className="p-4 pb-20">
@@ -29,15 +52,22 @@ const Timetable = () => {
 
       {/* Classes */}
       <div className="space-y-3">
-        <div className="bg-gray-800 p-4 rounded-xl">
-          <p className="font-medium">Operating Systems</p>
-          <p className="text-sm text-gray-400">9:00 - 10:00</p>
-        </div>
+        {loading && <p className="text-gray-400 text-sm">Loading timetable...</p>}
 
-        <div className="bg-gray-800 p-4 rounded-xl border-l-4 border-blue-500">
-          <p className="font-medium">Computer Networks</p>
-          <p className="text-sm text-gray-400">10:00 - 11:00</p>
-        </div>
+        {!loading && filteredClasses.length === 0 && (
+          <p className="text-gray-400 text-sm">No classes available for {selectedDay}.</p>
+        )}
+
+        {filteredClasses.map((entry, index) => (
+          <div
+            key={`${entry.subject}-${entry.time}-${index}`}
+            className="bg-gray-800 p-4 rounded-xl border-l-4 border-blue-500"
+          >
+            <p className="font-medium">{entry.subject}</p>
+            <p className="text-sm text-gray-400">{entry.time}</p>
+            {entry.room && <p className="text-xs text-gray-500 mt-1">Room: {entry.room}</p>}
+          </div>
+        ))}
       </div>
 
       <BottomNav />

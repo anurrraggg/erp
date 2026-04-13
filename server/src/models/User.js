@@ -7,10 +7,45 @@ const userSchema = new mongoose.Schema({
     unique: true,
   },
 
-  password: {
+  passwordHash: {
     type: String,
-    required: true, // will be encrypted
+    required: true,
   },
+
+  profile: {
+    name: {
+      type: String,
+      default: "Demo Student",
+    },
+    email: {
+      type: String,
+      default: "",
+    },
+  },
+
+  attendance: [
+    {
+      subject: String,
+      percent: Number,
+    },
+  ],
+
+  timetable: [
+    {
+      day: String,
+      subject: String,
+      time: String,
+      room: String,
+    },
+  ],
+
+  notices: [
+    {
+      title: String,
+      content: String,
+      date: String,
+    },
+  ],
 
   lastSynced: {
     type: Date,

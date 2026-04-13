@@ -1,25 +1,38 @@
 import BottomNav from "../components/layout/BottomNav";
-
-const notices = [
-  {
-    title: "Holiday Tomorrow",
-    content: "College will remain closed tomorrow.",
-    date: "Nov 15, 2024",
-  },
-  {
-    title: "Exam Schedule",
-    content: "Mid sem exams start next week.",
-    date: "Nov 14, 2024",
-  },
-];
+import { useEffect, useState } from "react";
+import API from "../services/api";
 
 const Notices = () => {
+  const [notices, setNotices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadNotices = async () => {
+      try {
+        const res = await API.get("/api/erp/notices");
+        setNotices(res.data.notices || []);
+      } catch (error) {
+        setNotices([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadNotices();
+  }, []);
+
   return (
     <div className="p-4 pb-20">
       <h1 className="text-xl font-bold mb-1">📢 Notices</h1>
       <p className="text-gray-400 text-sm mb-4">Latest announcements</p>
 
       <div className="space-y-3">
+        {loading && <p className="text-gray-400 text-sm">Loading notices...</p>}
+
+        {!loading && notices.length === 0 && (
+          <p className="text-gray-400 text-sm">No notices yet. Sync from Profile page.</p>
+        )}
+
         {notices.map((n, i) => (
           <div key={i} className="bg-gray-800 p-4 rounded-xl">
             <div className="flex justify-between items-start mb-1">
