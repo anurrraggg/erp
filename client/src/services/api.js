@@ -1,9 +1,12 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const BASE_URL = (import.meta.env.VITE_API_URL || "").trim();
+const FALLBACK_BASE_URL =
+  import.meta.env.DEV ? "http://localhost:5000" : "https://erp-xn3q.onrender.com";
 
 const API = axios.create({
-  baseURL: BASE_URL,
+  baseURL: BASE_URL || FALLBACK_BASE_URL,
+  timeout: 15000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -27,7 +30,7 @@ API.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      globalThis.location.href = "/login";
     }
     return Promise.reject(error);
   }

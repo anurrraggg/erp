@@ -52,7 +52,13 @@ const Login = () => {
         return;
       }
 
-      setError(err.response?.data?.message || "Invalid ERP credentials ❌");
+      const message =
+        err.response?.data?.message ||
+        err.code === "ECONNABORTED"
+          ? "Request timed out. Check backend URL or Render service status."
+          : err.message || "Invalid ERP credentials ❌";
+
+      setError(message);
     } finally {
       setLoading(false);
     }

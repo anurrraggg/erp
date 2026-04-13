@@ -6,7 +6,12 @@ const { getDbStatus } = require("./config/db");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === "production" 
+    ? ["https://erp-xn3q.onrender.com", "https://real-erp.vercel.app"] 
+    : ["http://localhost:5173", "http://localhost:3000"],
+  credentials: true
+}));
 app.use(express.json());
 
 app.get("/health", (req, res) => {
