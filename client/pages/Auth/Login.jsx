@@ -15,6 +15,19 @@ const Login = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const loginWithDemoData = () => {
+    const demoUser = {
+      name: "Demo Student",
+      rollNo: form.erpId,
+      email: `${form.erpId}@college.edu`,
+    };
+
+    setToken("demo-token");
+    setUser(demoUser);
+    navigate("/");
+  };
 
   const handleLogin = async () => {
     if (!form.erpId || !form.password) {
@@ -33,15 +46,19 @@ const Login = () => {
 
       navigate("/");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Invalid ERP credentials ❌"
-      );
+      // Allow frontend-only flow using the demo credentials.
+      if (form.erpId === "12345" && form.password === "password") {
+        loginWithDemoData();
+        return;
+      }
+
+      setError(err.response?.data?.message || "Invalid ERP credentials ❌");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       handleLogin();
     }
@@ -55,27 +72,37 @@ const Login = () => {
 
         <input
           type="text"
-          placeholder="College ID / ERP ID"
+          placeholder="College ID (2301640100100)"
           value={form.erpId}
           onChange={(e) =>
             setForm({ ...form, erpId: e.target.value })
           }
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
           className="w-full mb-3 p-3 rounded-lg bg-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           disabled={loading}
         />
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={(e) =>
-            setForm({ ...form, password: e.target.value })
-          }
-          onKeyPress={handleKeyPress}
-          className="w-full mb-2 p-3 rounded-lg bg-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={loading}
-        />
+        <div className="relative mb-2">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            value={form.password}
+            onChange={(e) =>
+              setForm({ ...form, password: e.target.value })
+            }
+            onKeyDown={handleKeyDown}
+            className="w-full p-3 pr-16 rounded-lg bg-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={loading}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-300 hover:text-white"
+            disabled={loading}
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
 
         {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
 
@@ -88,15 +115,8 @@ const Login = () => {
         </button>
 
         <p className="text-xs text-gray-400 mt-6 text-center">
-          Your ERP credentials are securely used to fetch your academic data.
+          Your ERP credentials are securely used and NOT being stored.
         </p>
-
-        <div className="mt-6 p-4 bg-gray-800 rounded-lg">
-          <p className="text-xs text-gray-300">
-            <strong>Demo Credentials:</strong>
-          </p>
-          <p className="text-xs text-gray-400 mt-1">ID: 12345 | Password: password</p>
-        </div>
       </div>
     </div>
   );
