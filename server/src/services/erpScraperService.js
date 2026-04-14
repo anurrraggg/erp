@@ -55,9 +55,104 @@ const scrapeErpData = async ({ erpId, password }) => {
       page.waitForNavigation({ waitUntil: "networkidle2", timeout: 45000 }),
     ]);
 
-    // The real extraction selectors should be mapped for your ERP pages.
-    // Until then, return stable data structure after a successful login.
-    return buildMockData(erpId);
+    // --- REAL ERP EXTRACTION LOGIC ---
+    await new Promise(r => setTimeout(r, 4000)); // wait for dashboard animations and data
+
+    // 1. Profile and Notices from Dashboard
+    const dashboardData = await page.evaluate((id) => {
+      // Find Name
+      let name = "Demo Student";
+      const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, div.font-bold, strong, b'));
+      for (const h of headings) {
+        if (h.innerText === h.innerText.toUpperCase() && h.innerText.length > 4 && h.innerText.length < 30) {
+          name = h.innerText.trim();
+          break; // First bold uppercase string is usually the name
+        }
+      }
+
+      // Find Notices
+      const dateRegex = /\d{2}\/\d{2}\/\d{2} \d{2}:\d{2} [aA|pP][mM]/;
+      const allLeaves = Array.from(document.querySelectorAll('*')).filter(el => el.children.length === 0);
+      const notices = [];
+      const seenTitles = new Set();
+
+      for (const el of allLeaves) {
+        if (dateRegex.test(el.innerText)) {
+           const dateStr = el.innerText.trim();
+           const parentText = el.parentElement ? el.parentElement.innerText : "";
+           const lines = parentText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+           const title = lines[0]; // first line of the parent's text is typically the title
+           
+           if (title && title !== dateStr && !seenTitles.has(title) && title.length > 10) {
+              seenTitles.add(title);
+              notices.push({
+                 title: title,
+                 content: "Please check your ERP portal for full details.",
+                 date: dateStr
+              });
+           }
+        }
+      }
+
+      return { profile: { name, email: `${id}@psit.ac.in` }, notices: notices.slice(0, 10) };
+    }, erpId);
+
+    let attendance = [];
+    let timetable = [];
+
+    // 2. Navigate to Attendance
+    try {
+      // Find and click the "My Attendance" button/link
+      const elements = await page.$x("//*[contains(text(), 'My Attendance')]");
+      let clicked = false;
+      for (const el of elements) {
+         try {
+            await el.click();
+            clicked = true;
+            break;
+         } catch(e) {}
+      }
+      
+      if (clicked) {
+        await new Promise(r => setTimeout(r, 4000)); // Wait for attendance page to load
+        
+        attendance = await page.evaluate(() => {
+          const att = [];
+          const rows = document.querySelectorAll('tr');
+          rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            if (text.includes('%')) {
+               const cells = Array.from(row.querySelectorAll('td, th'));
+               const percentCell = cells.find(c => c.innerText.includes('%'));
+               if (percentCell) {
+                 const percentMatch = percentCell.innerText.match(/(\d+(?:\.\d+)?)/);
+                 if (percentMatch) {
+                    const subject = cells[0].innerText.replace('\n', ' ').trim();
+                    if (subject && subject.toLowerCase() !== 'total') {
+                       att.push({ subject, percent: parseFloat(percentMatch[1]) });
+                    }
+                 }
+               }
+            }
+          });
+          return att;
+        });
+      }
+    } catch(e) {
+      console.log("Error extracting attendance:", e.message);
+    }
+
+    if (attendance.length === 0) {
+       // Graceful fallback so the frontend doesn't break
+       attendance.push({ subject: "(Data scraped failed - Contact Admin)", percent: 0 });
+    }
+    
+    return {
+      profile: dashboardData.profile,
+      notices: dashboardData.notices,
+      attendance,
+      timetable
+    };
   } finally {
     await browser.close();
   }
