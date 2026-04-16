@@ -77,19 +77,23 @@ const scrapeErpData = async ({ erpId, password }) => {
     }
     // 1. Profile and Notices from Dashboard
     const dashboardData = await page.evaluate((id) => {
-      // Find Name
+      // Find Name - Deep Scan
       let name = "Student";
-      const allNodes = Array.from(document.querySelectorAll('div, span, a, h1, h2, h3, h4, h5, b, strong'));
-      
-      for (const el of allNodes) {
-        const txt = el.innerText ? el.innerText.trim() : "";
-        if (txt.length > 4 && txt.length < 35) {
-          // If it's an uppercase string and isn't a common generic navbar word
-          if (txt === txt.toUpperCase() && !["DASHBOARD", "MY ACCOUNT", "HOME", "PSIT", "LOG OUT"].includes(txt)) {
-            name = txt;
-            break;
-          }
-        }
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+      let node;
+      while ((node = walker.nextNode())) {
+         const txt = node.textContent.trim();
+         // Looking for a typical all-caps name. 
+         if (txt.length > 5 && txt.length < 35 && txt === txt.toUpperCase()) {
+            // Is it a name? Ignore common UI terms:
+            if (!/DASHBOARD|LOG OUT|HOME|ATTENDANCE|MY ACCOUNT|TIMETABLE|PSIT|SEMESTER|FACULTY|REPORT|SUMMARY|STUDENT|DETAILS|WELCOME/i.test(txt)) {
+                // If it contains space, likely First Last 
+                if (txt.includes(' ')) {
+                    name = txt;
+                    break;
+                }
+            }
+         }
       }
       
       // Clean up the name casing
