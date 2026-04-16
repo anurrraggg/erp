@@ -1,7 +1,7 @@
 import BottomNav from "../components/layout/BottomNav";
 import { useEffect, useState } from "react";
-import API from "../../services/api";
-import useUserStore from "../../store/userStore";
+import API from "../services/api";
+import useUserStore from "../store/userStore";
 
 const Profile = () => {
   const logout = useUserStore((state) => state.logout);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import BottomNav from "../components/layout/BottomNav";
-import API from "../../services/api";
+import API from "../services/api";
 
 const Home = () => {
   const [data, setData] = useState({
