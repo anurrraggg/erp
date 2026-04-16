@@ -132,7 +132,6 @@ const scrapeErpData = async ({ erpId, password }) => {
     let timetable = [];
 
     // 2. Navigate and Scrape Attendance
-    let attendance = [];
     try {
       // Find and click the "My Attendance" link robustly
       await page.evaluate(() => {
