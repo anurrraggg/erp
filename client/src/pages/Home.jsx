@@ -50,6 +50,7 @@ const Home = () => {
       // Trigger background sync implicitly on mount
       handleSync();
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading && !data.profile) {

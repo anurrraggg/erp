@@ -22,7 +22,7 @@ const Profile = () => {
             email: profile.email,
           });
         }
-      } catch (error) {
+      } catch {
         // Keep fallback data from the store.
       }
     };

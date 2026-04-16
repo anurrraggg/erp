@@ -13,7 +13,7 @@ const Timetable = () => {
       try {
         const res = await API.get("/erp/timetable");
         setTimetable(res.data.timetable || []);
-      } catch (error) {
+      } catch {
         setTimetable([]);
       } finally {
         setLoading(false);

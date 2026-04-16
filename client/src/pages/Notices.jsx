@@ -11,7 +11,7 @@ const Notices = () => {
       try {
         const res = await API.get("/erp/notices");
         setNotices(res.data.notices || []);
-      } catch (error) {
+      } catch {
         setNotices([]);
       } finally {
         setLoading(false);

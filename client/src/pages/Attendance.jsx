@@ -17,7 +17,7 @@ const Attendance = () => {
       try {
         const res = await API.get("/erp/attendance");
         setSubjects(res.data.attendance || []);
-      } catch (error) {
+      } catch {
         setSubjects([]);
       } finally {
         setLoading(false);
