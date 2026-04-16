@@ -42,8 +42,8 @@ const scrapeErpData = async ({ erpId, password }) => {
     const page = await browser.newPage();
     await page.goto(loginUrl, { waitUntil: "networkidle2", timeout: 45000 });
 
-    const erpIdSelector = process.env.ERP_ID_SELECTOR || "input[name='erpId']";
-    const passwordSelector = process.env.ERP_PASSWORD_SELECTOR || "input[type='password']";
+    const erpIdSelector = process.env.ERP_ID_SELECTOR || "input[name='username']";
+    const passwordSelector = process.env.ERP_PASSWORD_SELECTOR || "input[name='password']";
     const submitSelector = process.env.ERP_SUBMIT_SELECTOR || "button[type='submit']";
 
     await page.waitForSelector(erpIdSelector, { timeout: 15000 });
@@ -78,13 +78,23 @@ const scrapeErpData = async ({ erpId, password }) => {
     // 1. Profile and Notices from Dashboard
     const dashboardData = await page.evaluate((id) => {
       // Find Name
-      let name = "Demo Student";
-      const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, div.font-bold, strong, b'));
-      for (const h of headings) {
-        if (h.innerText === h.innerText.toUpperCase() && h.innerText.length > 4 && h.innerText.length < 30) {
-          name = h.innerText.trim();
-          break; // First bold uppercase string is usually the name
+      let name = "Student";
+      const allNodes = Array.from(document.querySelectorAll('div, span, a, h1, h2, h3, h4, h5, b, strong'));
+      
+      for (const el of allNodes) {
+        const txt = el.innerText ? el.innerText.trim() : "";
+        if (txt.length > 4 && txt.length < 35) {
+          // If it's an uppercase string and isn't a common generic navbar word
+          if (txt === txt.toUpperCase() && !["DASHBOARD", "MY ACCOUNT", "HOME", "PSIT", "LOG OUT"].includes(txt)) {
+            name = txt;
+            break;
+          }
         }
+      }
+      
+      // Clean up the name casing
+      if (name !== "Student") {
+         name = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
       }
 
       // Find Notices
