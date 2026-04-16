@@ -131,51 +131,84 @@ const scrapeErpData = async ({ erpId, password }) => {
     let attendance = [];
     let timetable = [];
 
-    // 2. Navigate to Attendance
+    // 2. Navigate and Scrape Attendance
+    let attendance = [];
     try {
-      // Find and click the "My Attendance" button/link
-      const elements = await page.$x("//*[contains(text(), 'My Attendance')]");
-      let clicked = false;
-      for (const el of elements) {
-         try {
-            await el.click();
-            clicked = true;
-            break;
-         } catch(e) {}
-      }
+      // Find and click the "My Attendance" link robustly
+      await page.evaluate(() => {
+          const els = Array.from(document.querySelectorAll('a, span, div, li, button'));
+          const target = els.find(e => e.innerText && e.innerText.trim().toUpperCase() === 'MY ATTENDANCE');
+          if (target) target.click();
+      });
+      await new Promise(r => setTimeout(r, 4000)); // Wait for attendance page load
       
-      if (clicked) {
-        await new Promise(r => setTimeout(r, 4000)); // Wait for attendance page to load
-        
-        attendance = await page.evaluate(() => {
+      attendance = await page.evaluate(() => {
           const att = [];
           const rows = document.querySelectorAll('tr');
           rows.forEach(row => {
-            const text = row.innerText.toLowerCase();
-            if (text.includes('%')) {
-               const cells = Array.from(row.querySelectorAll('td, th'));
-               const percentCell = cells.find(c => c.innerText.includes('%'));
-               if (percentCell) {
-                 const percentMatch = percentCell.innerText.match(/(\d+(?:\.\d+)?)/);
-                 if (percentMatch) {
-                    const subject = cells[0].innerText.replace('\n', ' ').trim();
-                    if (subject && subject.toLowerCase() !== 'total') {
-                       att.push({ subject, percent: parseFloat(percentMatch[1]) });
-                    }
-                 }
-               }
-            }
+             const text = row.innerText.toLowerCase();
+             if (text.includes('%')) {
+                const cells = Array.from(row.querySelectorAll('td, th'));
+                const percentCell = cells.filter(c => c.innerText.includes('%')).pop();
+                if (percentCell) {
+                   const percentMatch = percentCell.innerText.match(/(\d+(?:\.\d+)?)/);
+                   if (percentMatch) {
+                      const subject = cells[0].innerText.replace(/\n/g, ' ').trim();
+                      if (subject && subject.length > 2 && !subject.toLowerCase().includes('total')) {
+                         att.push({ subject, percent: parseFloat(percentMatch[1]) });
+                      }
+                   }
+                }
+             }
           });
           return att;
-        });
-      }
+      });
     } catch(e) {
       console.log("Error extracting attendance:", e.message);
     }
 
     if (attendance.length === 0) {
-       // Graceful fallback so the frontend doesn't break
-       attendance.push({ subject: "(Data scraped failed - Contact Admin)", percent: 0 });
+       attendance.push({ subject: "(Data scraped failed - Wait for sync)", percent: 0 });
+    }
+
+    // 3. Navigate back and Scrape Timetable
+    let timetable = [];
+    try {
+      await page.goto(loginUrl + "Student/Dashboard", { waitUntil: "networkidle2" }).catch(()=>{});
+      await new Promise(r => setTimeout(r, 2000));
+
+      await page.evaluate(() => {
+          const els = Array.from(document.querySelectorAll('a, span, div, li, button'));
+          const target = els.find(e => e.innerText && (e.innerText.trim().toUpperCase() === 'TIME TABLE' || e.innerText.trim().toUpperCase() === 'TIMETABLE'));
+          if (target) target.click();
+      });
+      await new Promise(r => setTimeout(r, 4000)); // Wait for timetable page load
+
+      // Generic Timetable Extractor
+      timetable = await page.evaluate(() => {
+          const tt = [];
+          const rows = document.querySelectorAll('tr');
+          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          
+          rows.forEach(row => {
+              const text = row.innerText.trim().replace(/\s+/g, ' ');
+              // Try to identify rows that start with a Day or have strong subject characteristics
+              const matchedDay = days.find(d => text.toLowerCase().startsWith(d.toLowerCase()));
+              if (matchedDay) {
+                  // Fallback generic parse
+                  const parts = text.split(' ');
+                  tt.push({ 
+                      day: matchedDay, 
+                      subject: text.length > 20 ? text.substring(0, 30) + "..." : text, 
+                      time: "Class Time", 
+                      room: "" 
+                  });
+              }
+          });
+          return tt;
+      });
+    } catch(e) {
+      console.log("Error extracting timetable:", e.message);
     }
     
     return {
