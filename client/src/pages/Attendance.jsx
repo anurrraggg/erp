@@ -15,7 +15,7 @@ const Attendance = () => {
   useEffect(() => {
     const loadAttendance = async () => {
       try {
-        const res = await API.get("/api/erp/attendance");
+        const res = await API.get("/erp/attendance");
         setSubjects(res.data.attendance || []);
       } catch (error) {
         setSubjects([]);

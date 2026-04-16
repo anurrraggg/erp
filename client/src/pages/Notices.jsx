@@ -9,7 +9,7 @@ const Notices = () => {
   useEffect(() => {
     const loadNotices = async () => {
       try {
-        const res = await API.get("/api/erp/notices");
+        const res = await API.get("/erp/notices");
         setNotices(res.data.notices || []);
       } catch (error) {
         setNotices([]);

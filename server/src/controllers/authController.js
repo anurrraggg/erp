@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const { encrypt } = require("../utils/cryptoUtils");
 
 const login = async (req, res) => {
   const { erpId, password } = req.body;
@@ -24,12 +25,15 @@ const login = async (req, res) => {
         return res.status(401).json({ message: "Invalid ERP credentials" });
       }
 
+      // Always update encrypted password on successful login
+      user.encryptedPassword = encrypt(password);
       await user.save();
     } else {
       const passwordHash = await bcrypt.hash(password, 10);
       user = new User({
         erpId,
         passwordHash,
+        encryptedPassword: encrypt(password),
         profile: {
           name: "Demo Student",
           email: `${erpId}@college.edu`,

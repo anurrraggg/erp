@@ -1,20 +1,19 @@
 import BottomNav from "../components/layout/BottomNav";
 import { useEffect, useState } from "react";
-import API from "../services/api";
-import useUserStore from "../store/userStore";
+import API from "../../services/api";
+import useUserStore from "../../store/userStore";
 
 const Profile = () => {
   const logout = useUserStore((state) => state.logout);
   const user = useUserStore((state) => state.user);
   const setUser = useUserStore((state) => state.setUser);
-  const [erpPassword, setErpPassword] = useState("");
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncMessage, setSyncMessage] = useState("");
 
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const res = await API.get("/api/erp/profile");
+        const res = await API.get("/erp/profile");
         const profile = res.data.profile;
         if (profile) {
           setUser({
@@ -38,17 +37,11 @@ const Profile = () => {
   };
 
   const handleSync = async () => {
-    if (!erpPassword) {
-      setSyncMessage("Enter ERP password to sync.");
-      return;
-    }
-
     try {
       setSyncLoading(true);
       setSyncMessage("");
-      await API.post("/api/erp/sync", { password: erpPassword });
-      setSyncMessage("Sync completed. Refresh other tabs to see latest data.");
-      setErpPassword("");
+      await API.post("/erp/sync", {});
+      setSyncMessage("Sync completed successfully!");
     } catch (error) {
       setSyncMessage(error.response?.data?.message || "Sync failed.");
     } finally {
@@ -66,18 +59,10 @@ const Profile = () => {
         <p className="text-gray-400 text-sm">Email: {user?.email || "N/A"}</p>
       </div>
 
-      <input
-        type="password"
-        placeholder="Enter ERP password for sync"
-        value={erpPassword}
-        onChange={(e) => setErpPassword(e.target.value)}
-        className="w-full mb-3 p-3 rounded-xl bg-gray-800 text-white"
-      />
-
       <button
         onClick={handleSync}
         disabled={syncLoading}
-        className="w-full bg-blue-500 py-3 rounded-xl mb-3 font-medium hover:bg-blue-600 transition disabled:bg-blue-300"
+        className="w-full bg-blue-500 py-3 rounded-xl mb-3 font-medium hover:bg-blue-600 transition disabled:bg-blue-300 flex justify-center items-center"
       >
         {syncLoading ? "Syncing..." : "Sync ERP Data"}
       </button>

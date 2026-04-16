@@ -11,7 +11,7 @@ const Timetable = () => {
   useEffect(() => {
     const loadTimetable = async () => {
       try {
-        const res = await API.get("/api/erp/timetable");
+        const res = await API.get("/erp/timetable");
         setTimetable(res.data.timetable || []);
       } catch (error) {
         setTimetable([]);

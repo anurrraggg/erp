@@ -58,6 +58,23 @@ const scrapeErpData = async ({ erpId, password }) => {
     // --- REAL ERP EXTRACTION LOGIC ---
     await new Promise(r => setTimeout(r, 4000)); // wait for dashboard animations and data
 
+    // Navigate to My Account
+    try {
+      const accountElements = await page.$x("//*[contains(text(), 'My Account') or contains(text(), 'StudentProfile')]");
+      let clickedAccount = false;
+      for (const el of accountElements) {
+         try {
+            await el.click();
+            clickedAccount = true;
+            break;
+         } catch(e) {}
+      }
+      if (clickedAccount) {
+         await new Promise(r => setTimeout(r, 4000)); // wait for My Account to load
+      }
+    } catch(e) {
+      console.log("Could not find My Account tab, proceeding on Dashboard", e.message);
+    }
     // 1. Profile and Notices from Dashboard
     const dashboardData = await page.evaluate((id) => {
       // Find Name

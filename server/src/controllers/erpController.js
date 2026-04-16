@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const { scrapeErpData } = require("../services/erpScraperService");
+const { decrypt } = require("../utils/cryptoUtils");
 
 const mongooseConnectionReady = () => {
   const mongoose = require("mongoose");
@@ -16,34 +17,49 @@ const getCurrentUser = async (erpId) => {
 
 const syncData = async (req, res) => {
   const erpId = req.user?.erpId;
-  const { password } = req.body;
+  let { password } = req.body;
+
+  const user = await getCurrentUser(erpId);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  // If password is not provided in body, fallback to decrypted password from DB
+  if (!password && user.encryptedPassword) {
+    password = decrypt(user.encryptedPassword);
+  }
 
   if (!erpId || !password) {
     return res.status(400).json({ message: "erpId from token and password are required" });
   }
 
-  const data = await scrapeErpData({ erpId, password });
+  try {
+    const data = await scrapeErpData({ erpId, password });
 
-  if (mongooseConnectionReady()) {
-    await User.findOneAndUpdate(
-      { erpId },
-      {
-        $set: {
-          profile: data.profile,
-          attendance: data.attendance,
-          timetable: data.timetable,
-          notices: data.notices,
-          lastSynced: new Date(),
+    if (mongooseConnectionReady()) {
+      await User.findOneAndUpdate(
+        { erpId },
+        {
+          $set: {
+            profile: data.profile,
+            attendance: data.attendance,
+            timetable: data.timetable,
+            notices: data.notices,
+            lastSynced: new Date(),
+          },
         },
-      },
-      { new: true }
-    );
-  }
+        { new: true }
+      );
+    }
 
-  return res.json({
-    message: "ERP sync completed",
-    data,
-  });
+    return res.json({
+      message: "ERP sync completed",
+      data,
+    });
+  } catch (error) {
+    console.error("Sync error:", error);
+    return res.status(500).json({ message: error.message || "Failed to sync ERP data" });
+  }
 };
 
 const getAttendance = async (req, res) => {
