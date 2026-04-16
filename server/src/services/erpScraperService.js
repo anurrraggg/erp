@@ -171,7 +171,6 @@ const scrapeErpData = async ({ erpId, password }) => {
     }
 
     // 3. Navigate back and Scrape Timetable
-    let timetable = [];
     try {
       await page.goto(loginUrl + "Student/Dashboard", { waitUntil: "networkidle2" }).catch(()=>{});
       await new Promise(r => setTimeout(r, 2000));
