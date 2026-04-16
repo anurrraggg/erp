@@ -176,24 +176,6 @@ const Home = () => {
             <div className={`h-3 rounded-full ${getColor(averageAttendance)} transition-all duration-1000`} style={{ width: `${averageAttendance}%` }}></div>
           </div>
         </div>
-
-        {data.attendance && data.attendance.length > 0 && (
-          <div className="space-y-4">
-            {data.attendance.map((sub, i) => (
-              <div key={i}>
-                <div className="flex justify-between items-end mb-1">
-                  <p className="font-medium text-xs text-gray-300 pr-2 leading-tight">{sub.subject}</p>
-                  <p className={`text-xs font-bold whitespace-nowrap ${sub.percent >= 75 ? 'text-green-400' : 'text-red-400'}`}>
-                    {sub.percent}%
-                  </p>
-                </div>
-                <div className="w-full bg-gray-700 h-1.5 rounded-full">
-                  <div className={`${getColor(sub.percent)} h-1.5 rounded-full`} style={{ width: `${sub.percent}%` }}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
     </div>
