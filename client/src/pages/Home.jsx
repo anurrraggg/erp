@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import BottomNav from "../components/layout/BottomNav";
-import API from "../../services/api";
-import useUserStore from "../../store/userStore";
+import API from "../services/api";
+import useUserStore from "../store/userStore";
 
 const getColor = (p) => {
   if (p >= 75) return "bg-green-500";
